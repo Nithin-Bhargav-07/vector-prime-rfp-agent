@@ -1,0 +1,23 @@
+[
+  {
+    "sku_id": "AP-ROY-001",
+    "name": "Royale Aspira Wall Coating",
+    "category": "Interior Emulsion",
+    "features": ["crack-bridging", "teflon surface", "washable"],
+    "unit_price": 850
+  },
+  {
+    "sku_id": "AP-EXT-005",
+    "name": "Apex Ultima Protek",
+    "category": "Exterior Emulsion",
+    "features": ["waterproofing", "anti-algal", "10-year warranty"],
+    "unit_price": 620
+  },
+  {
+    "sku_id": "AP-IND-009",
+    "name": "Apcolite Premium Enamel",
+    "category": "Metal/Wood Paint",
+    "features": ["high gloss", "stain guard", "rust protection"],
+    "unit_price": 450
+  }
+]
