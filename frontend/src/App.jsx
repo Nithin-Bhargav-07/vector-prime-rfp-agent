@@ -3,7 +3,8 @@ import axios from 'axios';
 import { 
   Upload, FileText, Zap, DollarSign, Loader2, BarChart3, 
   ShieldCheck, ChevronRight, LayoutDashboard, Inbox, PieChart, 
-  TrendingUp, Clock, CheckCircle2, AlertCircle
+  TrendingUp, Clock, CheckCircle2, AlertCircle,
+  MessageSquare, X, Send, Bot 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11,7 +12,7 @@ import {
   ResponsiveContainer, LineChart, Line, AreaChart, Area 
 } from 'recharts';
 
-// --- MOCK DATA FOR ANALYTICS (Based on your PPT) ---
+// --- MOCK DATA FOR ANALYTICS ---
 const winRateData = [
   { month: 'Jan', manual: 15, ai: 40 },
   { month: 'Feb', manual: 18, ai: 55 },
@@ -24,7 +25,7 @@ const processingTimeData = [
   { name: 'Vector Prime', hours: 18, fill: '#22c55e' }, // 18 hours
 ];
 
-// --- MOCK DATA FOR INBOX (Simulating Sales Agent) ---
+// --- MOCK DATA FOR INBOX ---
 const recentRFPs = [
   { id: 'RFP-2025-001', client: 'Metro Rail Corp', value: '₹4.5 Cr', status: 'Qualified', date: '2 hrs ago', match: '92%' },
   { id: 'RFP-2025-002', client: 'Greenfield Airport', value: '₹12.0 Cr', status: 'Processing', date: '4 hrs ago', match: 'Pending' },
@@ -33,9 +34,16 @@ const recentRFPs = [
 ];
 
 function App() {
-  const [activeTab, setActiveTab] = useState('analyze'); // 'inbox', 'analyze', 'analytics'
+  const [activeTab, setActiveTab] = useState('analyze'); 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+
+  // --- CHATBOT STATE ---
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState([
+    { id: 1, text: "Hello! How can i help you today?", sender: 'bot' }
+  ]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -47,7 +55,6 @@ function App() {
     formData.append("file", file);
 
     try {
-      // Simulate backend call
       const response = await axios.post("http://localhost:8000/analyze-rfp", formData);
       setResult(response.data);
     } catch (error) {
@@ -58,11 +65,52 @@ function App() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-hidden">
+  // --- UPDATED CHAT LOGIC ---
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMsg = { id: Date.now(), text: chatInput, sender: 'user' };
+    setMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+
+    setTimeout(() => {
+      let botResponse = "I can help with 'active counts', 'expired listings', 'pricing', or 'technical specs'.";
+      const lowerInput = userMsg.text.toLowerCase();
+
+      // --- LOGIC: DATABASE QUERIES ---
+      if (lowerInput.includes('active') || lowerInput.includes('current') || lowerInput.includes('open')) {
+        botResponse = "There are currently **12 Active RFPs** in the pipeline:\n• 4 Qualified (High Priority)\n• 3 Processing\n• 5 Pending Review.";
+      } 
+      else if (lowerInput.includes('expired') || lowerInput.includes('old') || lowerInput.includes('closed')) {
+        botResponse = "I found **8 Expired RFPs** from the last quarter. Would you like me to archive them or generate a 'Loss Analysis' report?";
+      }
+      else if (lowerInput.includes('total') || lowerInput.includes('how many')) {
+        botResponse = "Total Database Count: **342 RFPs** processed this year. We have bid on 150 of them.";
+      }
       
-      {/* --- SIDEBAR NAVIGATION --- */}
-      <aside className="w-64 bg-slate-900 border-r border-white/5 flex flex-col">
+      // --- LOGIC: SPECIFIC RFP DETAILS ---
+      else if (lowerInput.includes('summary') || lowerInput.includes('about')) {
+        botResponse = "This is a tender for the Blue Horizon Corporate Extension. It requires painting ~85,000 sq ft with specific waterproofing and high-gloss finishes.";
+      } else if (lowerInput.includes('warranty') || lowerInput.includes('guarantee')) {
+        botResponse = "Critical Requirement: The client mandates a **10-year performance warranty** for all exterior coatings (Section 2.A).";
+      } else if (lowerInput.includes('water') || lowerInput.includes('rain')) {
+        botResponse = "Yes, the site is in a high-rainfall zone. I have prioritized **Apex Ultima Protek** because it has superior crack-bridging and anti-algal properties.";
+      } else if (lowerInput.includes('price') || lowerInput.includes('cost') || lowerInput.includes('value')) {
+        botResponse = "The total estimated project value is **₹9.8 Crores**. This includes a healthy 22% margin based on our current distributor pricing.";
+      } else if (lowerInput.includes('sku') || lowerInput.includes('product')) {
+        botResponse = "I recommend 3 core products: Apex Ultima (Exterior), Royale Aspira (Interior), and Apcolite Enamel (Metal Structures).";
+      }
+
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: botResponse, sender: 'bot' }]);
+    }, 800);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-slate-950 text-slate-300 font-sans overflow-hidden relative">
+      
+      {/* --- SIDEBAR --- */}
+      <aside className="w-64 bg-slate-900 border-r border-white/5 flex flex-col hidden md:flex">
         <div className="p-6 flex items-center gap-2 border-b border-white/5">
           <div className="w-8 h-8 bg-gradient-to-tr from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
             <Zap className="w-5 h-5 text-white fill-white" />
@@ -90,13 +138,13 @@ function App() {
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT AREA --- */}
+      {/* --- MAIN CONTENT --- */}
       <main className="flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
         <div className="p-8 max-w-7xl mx-auto">
           
           <AnimatePresence mode='wait'>
             
-            {/* --- TAB 1: INBOX (Simulating Web Scraper) --- */}
+            {/* TAB 1: INBOX */}
             {activeTab === 'inbox' && (
               <motion.div 
                 key="inbox"
@@ -156,7 +204,7 @@ function App() {
               </motion.div>
             )}
 
-            {/* --- TAB 2: ANALYTICS (Graphs) --- */}
+            {/* TAB 2: ANALYTICS */}
             {activeTab === 'analytics' && (
               <motion.div 
                 key="analytics"
@@ -223,7 +271,7 @@ function App() {
               </motion.div>
             )}
 
-            {/* --- TAB 3: ANALYZE (The Original Prototype) --- */}
+            {/* TAB 3: ANALYZE */}
             {activeTab === 'analyze' && (
               <motion.div 
                 key="analyze"
@@ -317,6 +365,79 @@ function App() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* --- FLOATING CHAT WIDGET --- */}
+      <AnimatePresence>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full shadow-lg shadow-cyan-500/20 flex items-center justify-center z-50 transition-colors"
+        >
+          {isChatOpen ? <X /> : <MessageSquare />}
+        </motion.button>
+
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-24 right-8 w-80 md:w-96 h-[500px] bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 flex flex-col backdrop-blur-xl"
+          >
+            {/* Chat Header */}
+            <div className="p-4 bg-slate-800/50 border-b border-white/5 flex items-center gap-3">
+              <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                <Bot className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-sm">RFP Copilot</h3>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span className="text-xs text-slate-400">Online & Ready</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/30">
+              {messages.map((msg) => (
+                <div 
+                  key={msg.id} 
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed ${
+                      msg.sender === 'user' 
+                        ? 'bg-cyan-600 text-white rounded-tr-none' 
+                        : 'bg-slate-800 border border-white/5 text-slate-300 rounded-tl-none'
+                    }`}
+                    style={{ whiteSpace: 'pre-line' }} // Allows line breaks in bot responses
+                    dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} 
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Input */}
+            <form onSubmit={handleSendMessage} className="p-3 bg-slate-900 border-t border-white/5 flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask 'How many active' or 'expired'..."
+                className="flex-1 bg-slate-950 border border-white/10 text-white text-sm rounded-xl px-4 focus:outline-none focus:border-cyan-500/50 transition"
+              />
+              <button 
+                type="submit"
+                className="p-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl transition-colors"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
